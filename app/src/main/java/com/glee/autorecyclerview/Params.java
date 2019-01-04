@@ -6,6 +6,8 @@ import android.support.annotation.LayoutRes;
 import android.support.v7.recyclerview.extensions.AsyncDifferConfig;
 import android.view.LayoutInflater;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author liji
  * @date 2018/12/29 17:32
@@ -14,54 +16,41 @@ import android.view.LayoutInflater;
 
 
 public class Params<T> {
-    private Context context;
+    private final @IdRes
+    int layoutId;
+    private final @IdRes
+    int headersId;
+    private final @IdRes
+    int footersId;
+    private final @IdRes
+    int brId;
+    private final @IdRes
+    int headerBrId;
+    private final @IdRes
+    int footerBrId;
 
-    private LayoutInflater inflater;
+    private final Executor mainExecutor;
+    private final Executor backgroundExecutor;
 
-    private AsyncDifferConfig<T> differConfig;
-    @LayoutRes
-    private int layoutId;
-    @IdRes
-    private int brId;
-
-
-    public Context getContext() {
-        return context;
-    }
-
-    public void setContext(Context context) {
-        this.context = context;
-    }
-
-    public LayoutInflater getInflater() {
-        return inflater;
-    }
-
-    public void setInflater(LayoutInflater inflater) {
-        this.inflater = inflater;
-    }
-
-    public AsyncDifferConfig<T> getDifferConfig() {
-        return differConfig;
-    }
-
-    public void setDifferConfig(AsyncDifferConfig<T> differConfig) {
-        this.differConfig = differConfig;
-    }
-
-    public int getLayoutId() {
-        return layoutId;
-    }
-
-    public void setLayoutId(@LayoutRes int layoutId) {
+    public Params(
+            int layoutId,
+            int headersId,
+            int footersId,
+            int brId,
+            int headerBrId,
+            int footerBrId,
+            Executor mainExecutor,
+            Executor backgroundExecutor
+    ) {
         this.layoutId = layoutId;
-    }
-
-    public int getBrId() {
-        return brId;
-    }
-
-    public void setBrId(int brId) {
+        this.headersId = headersId;
+        this.footersId = footersId;
         this.brId = brId;
+        this.headerBrId = headerBrId;
+        this.footerBrId = footerBrId;
+        this.mainExecutor = mainExecutor;
+        this.backgroundExecutor = backgroundExecutor;
     }
+
+
 }
