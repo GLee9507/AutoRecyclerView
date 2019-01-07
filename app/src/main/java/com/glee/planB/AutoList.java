@@ -21,11 +21,13 @@ import java.util.ListIterator;
  */
 
 
-public class AutoList<T> implements List<T> {
+public class AutoList<T> implements List<T>, BindingItem {
     private List<T> itemData = new ArrayList<>();
     private List<HF> headerList, footerList;
     @LayoutRes
-    private int brId, layoutId;
+    private int layoutId;
+    @IdRes
+    private int brId;
     private boolean shouldRefreshHeader, shouldRefreshFooter;
     private AsyncDifferConfig<T> config;
 
@@ -114,10 +116,12 @@ public class AutoList<T> implements List<T> {
         this.shouldRefreshFooter = shouldRefreshFooter;
     }
 
+    @Override
     public int getBrId() {
         return brId;
     }
 
+    @Override
     public int getLayoutId() {
         return layoutId;
     }
@@ -158,6 +162,15 @@ public class AutoList<T> implements List<T> {
         public LiveDataBuilder<T> mapHeader(@LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
             getHeaderDataSet().add(new HF(layoutId, brId, data));
             return this;
+        }
+
+        public LiveDataBuilder<T> mapFooter(@LayoutRes int layoutId, @IdRes int brId) {
+            return mapFooter(layoutId, brId, null);
+
+        }
+
+        public LiveDataBuilder<T> mapHeader(@LayoutRes int layoutId, @IdRes int brId) {
+            return mapHeader(layoutId, brId, null);
         }
 
         public MutableLiveData<AutoList<T>> build() {
@@ -309,7 +322,7 @@ public class AutoList<T> implements List<T> {
         return config;
     }
 
-    static class HF {
+    static class HF implements BindingItem {
         @IdRes
         private final int brId;
 
@@ -329,10 +342,12 @@ public class AutoList<T> implements List<T> {
             this.layoutId = layoutId;
         }
 
+        @Override
         public int getBrId() {
             return brId;
         }
 
+        @Override
         public int getLayoutId() {
             return layoutId;
         }

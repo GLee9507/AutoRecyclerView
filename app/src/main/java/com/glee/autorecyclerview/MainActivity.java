@@ -16,12 +16,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        ViewDataBinding viewDataBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-//        BViewModel bViewModel = new BViewModel();
-//        viewDataBinding.setVariable(BR.vm, bViewModel);
-//        viewDataBinding.setLifecycleOwner(this);
-        startActivity(new Intent(this, TestActivity.class));
-        finish();
+        ViewDataBinding viewDataBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        BViewModel bViewModel = new BViewModel();
+        viewDataBinding.setVariable(BR.vm, bViewModel);
+        viewDataBinding.setLifecycleOwner(this);
     }
 
     @Override
