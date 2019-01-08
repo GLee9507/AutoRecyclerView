@@ -22,23 +22,23 @@ import java.util.concurrent.Executor;
  */
 
 
-public class AAsyncDiffer<T> {
+public class LastRunAsyncListDiffer<T> {
     private final ListUpdateCallback mUpdateCallback;
     final AsyncDifferConfig<T> mConfig;
     final Executor mMainThreadExecutor;
-    private static final Executor sMainThreadExecutor = new AAsyncDiffer.MainThreadExecutor();
+    private static final Executor sMainThreadExecutor = new LastRunAsyncListDiffer.MainThreadExecutor();
     @Nullable
     private List<T> mList;
     @NonNull
     private List<T> mReadOnlyList;
     int mMaxScheduledGeneration;
 
-    public AAsyncDiffer(@NonNull RecyclerView.Adapter adapter, @NonNull DiffUtil.ItemCallback<T> diffCallback) {
+    public LastRunAsyncListDiffer(@NonNull RecyclerView.Adapter adapter, @NonNull DiffUtil.ItemCallback<T> diffCallback) {
         this((ListUpdateCallback) (new AdapterListUpdateCallback(adapter)), (AsyncDifferConfig) (new AsyncDifferConfig.Builder(diffCallback)).build());
     }
 
     @SuppressLint("RestrictedApi")
-    public AAsyncDiffer(@NonNull ListUpdateCallback listUpdateCallback, @NonNull AsyncDifferConfig<T> config) {
+    public LastRunAsyncListDiffer(@NonNull ListUpdateCallback listUpdateCallback, @NonNull AsyncDifferConfig<T> config) {
         this.mReadOnlyList = Collections.emptyList();
         this.mUpdateCallback = listUpdateCallback;
         this.mConfig = config;
@@ -94,7 +94,7 @@ public class AAsyncDiffer<T> {
                                 T oldItem = oldList.get(oldItemPosition);
                                 T newItem = newList.get(newItemPosition);
                                 if (oldItem != null && newItem != null) {
-                                    return AAsyncDiffer.this.mConfig.getDiffCallback().areItemsTheSame(oldItem, newItem);
+                                    return LastRunAsyncListDiffer.this.mConfig.getDiffCallback().areItemsTheSame(oldItem, newItem);
                                 } else {
                                     return oldItem == null && newItem == null;
                                 }
@@ -105,7 +105,7 @@ public class AAsyncDiffer<T> {
                                 T oldItem = oldList.get(oldItemPosition);
                                 T newItem = newList.get(newItemPosition);
                                 if (oldItem != null && newItem != null) {
-                                    return AAsyncDiffer.this.mConfig.getDiffCallback().areContentsTheSame(oldItem, newItem);
+                                    return LastRunAsyncListDiffer.this.mConfig.getDiffCallback().areContentsTheSame(oldItem, newItem);
                                 } else if (oldItem == null && newItem == null) {
                                     return true;
                                 } else {
@@ -119,16 +119,16 @@ public class AAsyncDiffer<T> {
                                 T oldItem = oldList.get(oldItemPosition);
                                 T newItem = newList.get(newItemPosition);
                                 if (oldItem != null && newItem != null) {
-                                    return AAsyncDiffer.this.mConfig.getDiffCallback().getChangePayload(oldItem, newItem);
+                                    return LastRunAsyncListDiffer.this.mConfig.getDiffCallback().getChangePayload(oldItem, newItem);
                                 } else {
                                     throw new AssertionError();
                                 }
                             }
                         });
-                        AAsyncDiffer.this.mMainThreadExecutor.execute(new Runnable() {
+                        LastRunAsyncListDiffer.this.mMainThreadExecutor.execute(new Runnable() {
                             public void run() {
-                                if (AAsyncDiffer.this.mMaxScheduledGeneration == runGeneration) {
-                                    AAsyncDiffer.this.latchList(newList, result);
+                                if (LastRunAsyncListDiffer.this.mMaxScheduledGeneration == runGeneration) {
+                                    LastRunAsyncListDiffer.this.latchList(newList, result);
                                     if (doLastRunnable != null) {
                                         doLastRunnable.run();
                                     }

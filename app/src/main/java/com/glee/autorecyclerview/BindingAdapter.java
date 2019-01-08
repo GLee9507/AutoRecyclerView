@@ -1,12 +1,11 @@
 package com.glee.autorecyclerview;
 
-import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.glee.planB.AutoList;
-import com.glee.planB.BAdapter;
+import com.glee.planB.AutoAdapter;
 
 /**
  * @author liji
@@ -28,11 +27,11 @@ public class BindingAdapter {
     ) {
         RecyclerView.Adapter adapter = recyclerView.getAdapter();
         if (adapter == null) {
-            adapter = new BAdapter(recyclerView.getContext());
+            adapter = new AutoAdapter(recyclerView.getContext());
             recyclerView.setLayoutManager(new LinearLayoutManager(recyclerView.getContext()));
             recyclerView.setAdapter(adapter);
         }
-        ((BAdapter)adapter).submitList(autoList);
+        ((AutoAdapter)adapter).submitList(autoList);
     }
 
 }

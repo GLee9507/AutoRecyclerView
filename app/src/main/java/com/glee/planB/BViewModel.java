@@ -18,12 +18,14 @@ import java.util.List;
 
 
 public class BViewModel extends ViewModel {
-    private MutableLiveData<AutoList<TestBean>> listLiveData = new AutoList.LiveDataBuilder<TestBean>(R.layout.item_test, BR.bean, null)
-            .mapHeader(R.layout.header_test, BR.headerText, null)
-            .mapFooter(R.layout.footer_test, BR.text, null)
+    private AutoList.LiveDataBuilder.AutoListLiveData<TestBean> listLiveData = new AutoList.LiveDataBuilder<TestBean>(R.layout.item_test, BR.bean, null)
+            .mapHeader("header1", R.layout.header_test, BR.headerText)
+//            .mapFooter(R.layout.footer_test, BR.text)
             .build();
 
+    @SuppressWarnings("uncheck")
     public BViewModel() {
+
         AutoList<TestBean> value = listLiveData.getValue();
         List<TestBean> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -43,9 +45,9 @@ public class BViewModel extends ViewModel {
                     }
                     i++;
                     AutoList<TestBean> value1 = listLiveData.getValue();
-                    value1.add(new TestBean(""+(i+99)));
-                    value1.updateHeader(R.layout.header_test, i + "");
-                    value1.updateFooter(R.layout.footer_test, i + "footer");
+//                    value1.addFooter("header1", R.layout.header_test, BR.headerText, "" + i);
+                    value1.updateHeader("header1", i + "");
+                    value1.add(new TestBean("aa"));
                     listLiveData.postValue(value1);
                 }
             }

@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 
 /**
  * @author liji
@@ -21,9 +22,9 @@ import java.util.ListIterator;
  */
 
 
-public class AutoList<T> implements List<T>, BindingItem {
+public class AutoList<T> implements List<T> {
     private List<T> itemData = new ArrayList<>();
-    private List<HF> headerList, footerList;
+    private List<Hf> headerList, footerList;
     @LayoutRes
     private int layoutId;
     @IdRes
@@ -34,8 +35,8 @@ public class AutoList<T> implements List<T>, BindingItem {
     private AutoList(
             int brId,
             int layoutId,
-            List<HF> headerDataSet,
-            List<HF> footersDataSet,
+            List<Hf> headerDataSet,
+            List<Hf> footersDataSet,
             AsyncDifferConfig<T> config
     ) {
         this.config = config;
@@ -45,50 +46,122 @@ public class AutoList<T> implements List<T>, BindingItem {
         this.footerList = footersDataSet;
     }
 
-    public List<HF> getHeaderList() {
+    public List<Hf> getHeaderList() {
         return headerList;
     }
 
-    public void setHeaderList(List<HF> headerList) {
-        this.headerList = headerList;
-    }
 
-    public List<HF> getFooterList() {
+    public List<Hf> getFooterList() {
         return footerList;
     }
 
-    public void setFooterList(List<HF> footerList) {
-        this.footerList = footerList;
+//    private List<String> needHeaderRefreshKeys;
+//
+//    List<String> getNeedHeaderRefreshKeys() {
+//        if (needHeaderRefreshKeys == null) {
+//            needHeaderRefreshKeys = new ArrayList<>();
+//        }
+//        return needHeaderRefreshKeys;
+//    }
+//
+//    private List<String> needFooterRefreshKeys;
+//
+//    List<String> getNeedFooterRefreshKeys() {
+//        if (needFooterRefreshKeys == null) {
+//            needFooterRefreshKeys = new ArrayList<>();
+//        }
+//        return needFooterRefreshKeys;
+//    }
+
+    public void addHeader(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId) {
+        addHeader(key, layoutId, brId, null);
     }
 
-    void addHeader(@LayoutRes int layoutId, @IdRes int brId) {
-        headerList.add(new HF(layoutId, brId));
+    public void addFooter(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId) {
+        addFooter(key, layoutId, brId, null);
     }
 
-    void addFooter(@LayoutRes int layoutId, @IdRes int brId) {
-        footerList.add(new HF(layoutId, brId));
-    }
-
-    public void updateHeader(@LayoutRes int layoutId, Object o) {
-        for (HF hf : headerList) {
-            if (hf.layoutId == layoutId) {
-                hf.setData(o);
-                shouldRefreshHeader = true;
+    public void addHeader(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId, Object data) {
+        if (headerList == null) {
+            headerList = new ArrayList<>();
+        }
+        int size = headerList.size();
+        for (int i = 0; i < size; i++) {
+            if (Objects.equals(headerList.get(i).getKey(), key)) {
+                updateHeader(key, data);
                 return;
             }
         }
-        throw new IllegalStateException();
+        headerList.add(new Hf(key, layoutId, brId, data));
+//        getNeedHeaderRefreshKeys().add(key);
+        shouldRefreshHeader = true;
     }
 
-    public void updateFooter(@LayoutRes int layoutId, Object o) {
-        for (HF hf : footerList) {
-            if (hf.layoutId == layoutId) {
-                hf.setData(o);
-                shouldRefreshHeader = true;
+    public void addFooter(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId, Object data) {
+        if (footerList == null) {
+            footerList = new ArrayList<>();
+        }
+        int size = footerList.size();
+        for (int i = 0; i < size; i++) {
+            if (Objects.equals(footerList.get(i).getKey(), key)) {
+                updateFooter(key, data);
                 return;
             }
         }
-        throw new IllegalStateException();
+        footerList.add(new Hf(key, layoutId, brId, data));
+//        getNeedFooterRefreshKeys().add(key);
+        shouldRefreshFooter = true;
+    }
+
+    public void removeHeader(@NonNull String key) {
+        int size = headerList.size();
+        for (int i = 0; i < size; i++) {
+            if (key.equals(headerList.get(i).getKey())) {
+                headerList.remove(i);
+//                getNeedHeaderRefreshKeys().add(key);
+                shouldRefreshHeader = true;
+                break;
+            }
+        }
+    }
+
+    public void removeFooter(@NonNull String key) {
+        int size = footerList.size();
+        for (int i = 0; i < size; i++) {
+            if (key.equals(footerList.get(i).getKey())) {
+                footerList.remove(i);
+//                getNeedFooterRefreshKeys().add(key);
+                shouldRefreshFooter = true;
+                break;
+            }
+        }
+    }
+
+
+    public void updateHeader(@NonNull String key, Object o) {
+        int size = headerList.size();
+        for (int i = 0; i < size; i++) {
+            Hf hf = headerList.get(i);
+            if (key.equals(hf.getKey())) {
+                hf.setData(o);
+//                getNeedHeaderRefreshKeys().add(key);
+                shouldRefreshHeader = true;
+                break;
+            }
+        }
+    }
+
+    public void updateFooter(@NonNull String key, Object o) {
+        int size = footerList.size();
+        for (int i = 0; i < size; i++) {
+            Hf hf = footerList.get(i);
+            if (key.equals(hf.getKey())) {
+                hf.setData(o);
+//                getNeedFooterRefreshKeys().add(key);
+                shouldRefreshHeader = true;
+                break;
+            }
+        }
     }
 
 
@@ -116,12 +189,10 @@ public class AutoList<T> implements List<T>, BindingItem {
         this.shouldRefreshFooter = shouldRefreshFooter;
     }
 
-    @Override
     public int getBrId() {
         return brId;
     }
 
-    @Override
     public int getLayoutId() {
         return layoutId;
     }
@@ -132,7 +203,8 @@ public class AutoList<T> implements List<T>, BindingItem {
         @LayoutRes
         private int layoutId;
         private AsyncDifferConfig<T> config;
-        private List<HF> headerDataSet, footersDataSet;
+        //        private List<Hf> headerDataSet, footersDataSet;
+        private List<Hf> headerDataSet, footersDataSet;
         private final DiffUtil.ItemCallback<T> itemCallback;
 
         public LiveDataBuilder(@LayoutRes int layoutId, @IdRes int brId, @Nullable DiffUtil.ItemCallback<T> itemCallback) {
@@ -154,34 +226,38 @@ public class AutoList<T> implements List<T>, BindingItem {
             this.itemCallback = itemCallback;
         }
 
-        public LiveDataBuilder<T> mapFooter(@LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
-            getFootersDataSet().add(new HF(layoutId, brId, data));
+        public LiveDataBuilder(@LayoutRes int layoutId, @IdRes int brId) {
+            this(layoutId, brId, null);
+        }
+
+        public LiveDataBuilder<T> mapFooter(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
+            getFootersDataSet().add(new Hf(key, layoutId, brId, data));
             return this;
         }
 
-        public LiveDataBuilder<T> mapHeader(@LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
-            getHeaderDataSet().add(new HF(layoutId, brId, data));
+        public LiveDataBuilder<T> mapHeader(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
+            getHeaderDataSet().add(new Hf(key, layoutId, brId, data));
             return this;
         }
 
-        public LiveDataBuilder<T> mapFooter(@LayoutRes int layoutId, @IdRes int brId) {
-            return mapFooter(layoutId, brId, null);
+        public LiveDataBuilder<T> mapFooter(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId) {
+            return mapFooter(key, layoutId, brId, null);
 
         }
 
-        public LiveDataBuilder<T> mapHeader(@LayoutRes int layoutId, @IdRes int brId) {
-            return mapHeader(layoutId, brId, null);
+        public LiveDataBuilder<T> mapHeader(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId) {
+            return mapHeader(key, layoutId, brId, null);
         }
 
-        public MutableLiveData<AutoList<T>> build() {
-            MutableLiveData<AutoList<T>> liveData = new MutableLiveData<>();
+        public AutoListLiveData<T> build() {
+            AutoListLiveData<T> liveData = new AutoListLiveData<>();
             assert itemCallback != null;
             config = new AsyncDifferConfig.Builder<>(itemCallback).build();
             liveData.setValue(new AutoList<>(brId, layoutId, headerDataSet, footersDataSet, config));
             return liveData;
         }
 
-        private List<HF> getFootersDataSet() {
+        private List<Hf> getFootersDataSet() {
             if (footersDataSet == null) {
                 footersDataSet = new ArrayList<>();
             }
@@ -189,11 +265,19 @@ public class AutoList<T> implements List<T>, BindingItem {
         }
 
 
-        private List<HF> getHeaderDataSet() {
+        private List<Hf> getHeaderDataSet() {
             if (headerDataSet == null) {
                 headerDataSet = new ArrayList<>();
             }
             return headerDataSet;
+        }
+
+        public static class AutoListLiveData<T> extends MutableLiveData<AutoList<T>> {
+            @NonNull
+            @Override
+            public AutoList<T> getValue() {
+                return super.getValue();
+            }
         }
     }
 
@@ -322,42 +406,60 @@ public class AutoList<T> implements List<T>, BindingItem {
         return config;
     }
 
-    static class HF implements BindingItem {
+    static class Hf{
         @IdRes
-        private final int brId;
+        private int brId;
 
         @LayoutRes
-        private final int layoutId;
+        private int layoutId;
 
         private Object data;
+        private String key;
+        private boolean needRefresh;
 
-        public HF(int brId, int layoutId) {
-            this.brId = brId;
-            this.layoutId = layoutId;
+        Hf(String key, int layoutId, int brId) {
+            this(key, layoutId, brId, null);
         }
 
-        public HF(int layoutId, int brId, Object data) {
+        Hf(String key, int layoutId, int brId, Object data) {
             this.data = data;
             this.brId = brId;
             this.layoutId = layoutId;
+            this.key = key;
         }
 
-        @Override
         public int getBrId() {
             return brId;
         }
 
-        @Override
         public int getLayoutId() {
             return layoutId;
         }
 
-        public Object getData() {
-            return data;
+        public <T> T getData() {
+            return (T) data;
         }
 
         public void setData(Object data) {
             this.data = data;
+            needRefresh = true;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public boolean isSame(Hf hf) {
+            return Objects.equals(key, hf.getKey()) && brId == hf.getBrId() && layoutId == hf.getLayoutId() &&
+                    Objects.equals(data, hf.getData());
+        }
+
+        public boolean isNeedRefresh() {
+            return needRefresh;
+        }
+
+        public void refreshFinish() {
+            needRefresh = false;
         }
     }
 }

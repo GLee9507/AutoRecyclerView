@@ -3,20 +3,19 @@ package com.glee.planB;
 import android.content.Context;
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
-import android.os.SystemClock;
+import android.support.annotation.IdRes;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.recyclerview.extensions.AsyncListDiffer;
-import android.support.v7.util.DiffUtil;
 import android.support.v7.util.ListUpdateCallback;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
-import java.util.Arrays;
-import java.util.Collections;
+import com.glee.autorecyclerview.R;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,8 +25,8 @@ import java.util.List;
  */
 
 
-public class BAdapter<T> extends RecyclerView.Adapter<BAdapter.BViewHolder> {
-    private AAsyncDiffer<T> differ;
+public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BViewHolder> {
+    private LastRunAsyncListDiffer<T> differ;
     private static final int TYPE_ITEM = 0;
     private static final int TYPE_HEADER = 1;
     private static final int TYPE_FOOTER = -1;
@@ -39,25 +38,75 @@ public class BAdapter<T> extends RecyclerView.Adapter<BAdapter.BViewHolder> {
     private int pageNum = 0;
     private int currentState = STATE_NORMAL;
     private AutoList<T> autoList;
-    private List<AutoList.HF> headers;
-    private List<AutoList.HF> footers;
+    private List<AutoList.Hf> headers;
+    private List<AutoList.Hf> footers;
 
-    public BAdapter(Context context) {
+    public List<AutoList.Hf> getHeaders() {
+        if (headers == null) {
+            headers = new ArrayList<>();
+        }
+        return headers;
+    }
+
+
+    public List<AutoList.Hf> getFooters() {
+        if (footers == null) {
+            footers = new ArrayList<>();
+        }
+        return footers;
+    }
+
+
+    public AutoAdapter(Context context) {
         this.context = context;
         inflater = LayoutInflater.from(context);
     }
 
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        recyclerView.setItemAnimator(null);
+    }
+
     @NonNull
     @Override
-    public BAdapter.BViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        return new BAdapter.BViewHolder(DataBindingUtil.inflate(inflater, i, viewGroup, false), i);
+    public AutoAdapter.BViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        return new AutoAdapter.BViewHolder(DataBindingUtil.inflate(inflater, i, viewGroup, false), i);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull BAdapter.BViewHolder bindingViewHolder, int i) {
-        BindingItem bindingItem = getBindingItemByLayoutId(getItemLayoutIdByPosition(i));
-        bindingViewHolder.bind(getBindingItemData(i), bindingItem.getBrId());
+    public void onBindViewHolder(@NonNull AutoAdapter.BViewHolder bindingViewHolder, int i) {
+
+        bindingViewHolder.bind(getBindingItemData(i), getBrIdByPosition(i));
         checkLoad(i);
+    }
+
+    @IdRes
+    private int getBrIdByPosition(int pos) {
+        int layoutId = getItemViewType(pos);
+        if (layoutId == autoList.getLayoutId()) {
+            return autoList.getBrId();
+        }
+        if (headers != null) {
+            int size = headers.size();
+            for (int i = 0; i < size; i++) {
+                AutoList.Hf hf = headers.get(i);
+                if (hf.getLayoutId() == layoutId) {
+                    return hf.getBrId();
+                }
+            }
+        }
+
+        if (footers != null) {
+            int size = footers.size();
+            for (int i = 0; i < size; i++) {
+                AutoList.Hf hf = footers.get(i);
+                if (hf.getLayoutId() == layoutId) {
+                    return hf.getBrId();
+                }
+            }
+        }
+        throw new IllegalArgumentException();
     }
 
     private void checkLoad(int position) {
@@ -68,23 +117,23 @@ public class BAdapter<T> extends RecyclerView.Adapter<BAdapter.BViewHolder> {
         currentState = STATE_LOADING;
     }
 
-    private BindingItem getBindingItemByLayoutId(@LayoutRes int layoutId) {
-        if (autoList.getLayoutId() == layoutId) {
-            return autoList;
-        }
-        for (AutoList.HF header : headers) {
-            if (header.getLayoutId() == layoutId) {
-                return header;
-            }
-        }
-
-        for (AutoList.HF footer : footers) {
-            if (footer.getLayoutId() == layoutId) {
-                return footer;
-            }
-        }
-        throw new IllegalArgumentException();
-    }
+//    private BindingItem getBindingItemByLayoutId(@LayoutRes int layoutId) {
+//        if (autoList.getLayoutId() == layoutId) {
+//            return autoList;
+//        }
+//        for (AutoList.Hf header : headers) {
+//            if (header.getLayoutId() == layoutId) {
+//                return header;
+//            }
+//        }
+//
+//        for (AutoList.Hf footer : footers) {
+//            if (footer.getLayoutId() == layoutId) {
+//                return footer;
+//            }
+//        }
+//        throw new IllegalArgumentException();
+//    }
 
     private Object getBindingItemData(int position) {
         int headerCount = getHeaderCount();
@@ -148,7 +197,7 @@ public class BAdapter<T> extends RecyclerView.Adapter<BAdapter.BViewHolder> {
             if (this.autoList == null) {
                 this.autoList = list;
             }
-            differ = new AAsyncDiffer<>(new ListUpdateCallback() {
+            differ = new LastRunAsyncListDiffer<>(new ListUpdateCallback() {
                 @Override
                 public void onInserted(int i, int i1) {
                     notifyItemRangeInserted(i + getHeaderCount(), i1 + getHeaderCount());
@@ -174,81 +223,66 @@ public class BAdapter<T> extends RecyclerView.Adapter<BAdapter.BViewHolder> {
 
     public void submitList(final AutoList<T> autoList) {
         checkNullDiffer(autoList);
-        differ.submitList(autoList, new Runnable() {
-            @Override
-            public void run() {
-                long l = System.nanoTime();
-                calculateDiffHeaders(autoList);
-                calculateDiffFooters(autoList);
-                Log.d("glee9507", (System.nanoTime() - l) + "");
-            }
-        });
+        Runnable runnable = null;
+        if (autoList.isShouldRefreshFooter() || autoList.isShouldRefreshHeader()) {
+            runnable = new Runnable() {
+                @Override
+                public void run() {
+                    long l = System.nanoTime();
+                    if (autoList.isShouldRefreshHeader()) {
+                        calculateDiffHeaders(autoList);
+                        autoList.refreshHeaderComplete();
+                    }
+                    if (autoList.isShouldRefreshFooter()) {
+                        calculateDiffFooters(autoList);
+                        autoList.refreshFooterComplete();
+                    }
+                    Log.d("glee9507", (System.nanoTime() - l) + "");
+                }
+            };
+        }
+
+        differ.submitList(autoList, runnable);
     }
 
     private void calculateDiffHeaders(final AutoList<T> autoList) {
-        List<AutoList.HF> newHeaders = autoList.getHeaderList();
-        if (isEmpty(headers)) {
-            if (isEmpty(newHeaders)) {
-                return;
-            }
-            headers = newHeaders;
-            notifyItemRangeInserted(0, headers.size());
-            return;
-        }
-        if (isEmpty(newHeaders)) {
-            if (isEmpty(headers)) {
-                return;
-            }
-            int size = headers.size();
-            headers = newHeaders;
-            notifyItemRangeRemoved(0, size);
-            return;
-        }
 
-        int oldSize = headers.size();
-        int newSize = newHeaders.size();
+        final List<AutoList.Hf> newHeaders = autoList.getHeaderList();
+        final int oldSize = getHeaderCount();
+        final int newSize = newHeaders == null ? 0 : newHeaders.size();
 
-        headers = newHeaders;
+        if (headers != null) {
+            headers.clear();
+        }
+        if (newSize > 0) {
+            getHeaders().addAll(newHeaders);
+        }
         if (newSize > oldSize) {
-            notifyItemRangeInserted(oldSize - 1, newSize - oldSize);
+            notifyItemRangeInserted(0, newSize - oldSize);
         } else if (newSize < oldSize) {
             notifyItemRangeRemoved(0, oldSize - newSize);
         }
+        notifyItemRangeChanged(0, getHeaderCount());
 
-        notifyItemRangeChanged(0, newSize);
     }
 
     private void calculateDiffFooters(final AutoList<T> autoList) {
-        List<AutoList.HF> newFooters = autoList.getFooterList();
-        if (isEmpty(footers)) {
-            if (isEmpty(newFooters)) {
-                return;
-            }
-            footers = newFooters;
-            notifyItemRangeInserted(getHeaderCount() + getContentCount(), footers.size());
-            return;
+        final List<AutoList.Hf> newFooters = autoList.getFooterList();
+        final int oldSize = getFooterCount();
+        final int newSize = newFooters == null ? 0 : newFooters.size();
+        if (footers != null) {
+            footers.clear();
         }
-        if (isEmpty(newFooters)) {
-            if (isEmpty(footers)) {
-                return;
-            }
-            int size = footers.size();
-            footers = newFooters;
-            notifyItemRangeRemoved(getHeaderCount() + getContentCount(), size);
-            return;
+        if (newSize > 0) {
+            getFooters().addAll(newFooters);
         }
-
-        int oldSize = footers.size();
-        int newSize = newFooters.size();
-
-        footers = newFooters;
         if (newSize > oldSize) {
-            notifyItemRangeInserted(getHeaderCount() + getContentCount() + oldSize, newSize - oldSize);
+            notifyItemRangeInserted(getHeaderCount() + getContentCount(), newSize - oldSize);
         } else if (newSize < oldSize) {
             notifyItemRangeRemoved(getHeaderCount() + getContentCount(), oldSize - newSize);
         }
+        notifyItemRangeChanged(getHeaderCount() + getContentCount(), getFooterCount());
 
-        notifyItemRangeChanged(getHeaderCount() + getContentCount(), newSize);
     }
 
     private boolean isEmpty(List list) {
@@ -258,7 +292,7 @@ public class BAdapter<T> extends RecyclerView.Adapter<BAdapter.BViewHolder> {
     static class BViewHolder extends RecyclerView.ViewHolder {
         private final ViewDataBinding dataBinding;
 
-        public BViewHolder(@NonNull ViewDataBinding dataBinding, int i) {
+        BViewHolder(@NonNull ViewDataBinding dataBinding, int i) {
             super(dataBinding.getRoot());
             this.dataBinding = dataBinding;
         }
