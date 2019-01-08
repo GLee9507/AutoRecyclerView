@@ -13,8 +13,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
-import com.glee.autorecyclerview.R;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,17 +23,13 @@ import java.util.List;
  */
 
 
-public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BViewHolder> {
+public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BindingViewHolder> {
     private LastRunAsyncListDiffer<T> differ;
-    private static final int TYPE_ITEM = 0;
-    private static final int TYPE_HEADER = 1;
-    private static final int TYPE_FOOTER = -1;
     private static final int STATE_NORMAL = 1;
     private static final int STATE_LOADING = 2;
     private static final int STATE_END = 3;
     private final Context context;
     private final LayoutInflater inflater;
-    private int pageNum = 0;
     private int currentState = STATE_NORMAL;
     private AutoList<T> autoList;
     private List<AutoList.Hf> headers;
@@ -70,12 +64,12 @@ public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BViewHolder
 
     @NonNull
     @Override
-    public AutoAdapter.BViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        return new AutoAdapter.BViewHolder(DataBindingUtil.inflate(inflater, i, viewGroup, false), i);
+    public BindingViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        return new BindingViewHolder(DataBindingUtil.inflate(inflater, i, viewGroup, false), i);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull AutoAdapter.BViewHolder bindingViewHolder, int i) {
+    public void onBindViewHolder(@NonNull BindingViewHolder bindingViewHolder, int i) {
 
         bindingViewHolder.bind(getBindingItemData(i), getBrIdByPosition(i));
         checkLoad(i);
@@ -117,23 +111,6 @@ public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BViewHolder
         currentState = STATE_LOADING;
     }
 
-//    private BindingItem getBindingItemByLayoutId(@LayoutRes int layoutId) {
-//        if (autoList.getLayoutId() == layoutId) {
-//            return autoList;
-//        }
-//        for (AutoList.Hf header : headers) {
-//            if (header.getLayoutId() == layoutId) {
-//                return header;
-//            }
-//        }
-//
-//        for (AutoList.Hf footer : footers) {
-//            if (footer.getLayoutId() == layoutId) {
-//                return footer;
-//            }
-//        }
-//        throw new IllegalArgumentException();
-//    }
 
     private Object getBindingItemData(int position) {
         int headerCount = getHeaderCount();
@@ -289,17 +266,19 @@ public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BViewHolder
         return list == null || list.size() == 0;
     }
 
-    static class BViewHolder extends RecyclerView.ViewHolder {
+    static class BindingViewHolder extends RecyclerView.ViewHolder {
         private final ViewDataBinding dataBinding;
 
-        BViewHolder(@NonNull ViewDataBinding dataBinding, int i) {
+        BindingViewHolder(@NonNull ViewDataBinding dataBinding, int i) {
             super(dataBinding.getRoot());
             this.dataBinding = dataBinding;
         }
 
-        public <T> void bind(T item, int brId) {
-            dataBinding.setVariable(brId, item);
-            dataBinding.executePendingBindings();
+        <T> void bind(T item, int brId) {
+            if (brId != -1) {
+                dataBinding.setVariable(brId, item);
+                dataBinding.executePendingBindings();
+            }
         }
     }
 }

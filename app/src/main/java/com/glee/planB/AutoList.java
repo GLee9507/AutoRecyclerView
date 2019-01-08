@@ -26,7 +26,8 @@ public class AutoList<T> implements List<T> {
     private List<T> itemData = new ArrayList<>();
     private List<Hf> headerList, footerList;
     @LayoutRes
-    private int layoutId;
+    private int layoutId, loadLayoutId;
+    private boolean enableLoad;
     @IdRes
     private int brId;
     private boolean shouldRefreshHeader, shouldRefreshFooter;
@@ -44,6 +45,13 @@ public class AutoList<T> implements List<T> {
         this.layoutId = layoutId;
         this.headerList = headerDataSet;
         this.footerList = footersDataSet;
+        if (headerList != null) {
+            shouldRefreshHeader = true;
+        }
+
+        if (footerList != null) {
+            shouldRefreshFooter = true;
+        }
     }
 
     public List<Hf> getHeaderList() {
@@ -102,14 +110,21 @@ public class AutoList<T> implements List<T> {
             footerList = new ArrayList<>();
         }
         int size = footerList.size();
-        for (int i = 0; i < size; i++) {
-            if (Objects.equals(footerList.get(i).getKey(), key)) {
-                updateFooter(key, data);
+
+        for (int i = size - 1; i > -1; i--) {
+            Hf hf = footerList.get(i);
+            if (Objects.equals(hf.getKey(), key)) {
+                hf.setData(data);
+                shouldRefreshFooter = true;
                 return;
             }
         }
-        footerList.add(new Hf(key, layoutId, brId, data));
-//        getNeedFooterRefreshKeys().add(key);
+        if (size > 0 && Objects.equals(footerList.get(size - 1).getKey(), LiveDataBuilder.LOAD_VIEW_KTY)) {
+            footerList.add(size - 1, new Hf(key, layoutId, brId, data));
+        } else {
+            footerList.add(new Hf(key, layoutId, brId, data));
+        }
+
         shouldRefreshFooter = true;
     }
 
@@ -158,12 +173,23 @@ public class AutoList<T> implements List<T> {
             if (key.equals(hf.getKey())) {
                 hf.setData(o);
 //                getNeedFooterRefreshKeys().add(key);
-                shouldRefreshHeader = true;
+                shouldRefreshFooter = true;
                 break;
             }
         }
     }
 
+    public void updateLoadView(Object o) {
+        int size = footerList.size();
+        for (int i = size - 1; i > -1; i--) {
+            Hf hf = footerList.get(i);
+            if (Objects.equals(hf.getKey(), LiveDataBuilder.LOAD_VIEW_KTY)) {
+                hf.setData(o);
+                shouldRefreshFooter = true;
+                return;
+            }
+        }
+    }
 
     void refreshHeaderComplete() {
         shouldRefreshHeader = false;
@@ -177,17 +203,11 @@ public class AutoList<T> implements List<T> {
         return shouldRefreshHeader;
     }
 
-    public void setShouldRefreshHeader(boolean shouldRefreshHeader) {
-        this.shouldRefreshHeader = shouldRefreshHeader;
-    }
 
     public boolean isShouldRefreshFooter() {
         return shouldRefreshFooter;
     }
 
-    public void setShouldRefreshFooter(boolean shouldRefreshFooter) {
-        this.shouldRefreshFooter = shouldRefreshFooter;
-    }
 
     public int getBrId() {
         return brId;
@@ -197,15 +217,23 @@ public class AutoList<T> implements List<T> {
         return layoutId;
     }
 
+    public boolean isEnableLoad() {
+        return enableLoad;
+    }
+
+    public int getLoadLayoutId() {
+        return loadLayoutId;
+    }
+
     public static class LiveDataBuilder<T> {
         @IdRes
         private int brId;
         @LayoutRes
         private int layoutId;
         private AsyncDifferConfig<T> config;
-        //        private List<Hf> headerDataSet, footersDataSet;
         private List<Hf> headerDataSet, footersDataSet;
         private final DiffUtil.ItemCallback<T> itemCallback;
+        public static final String LOAD_VIEW_KTY = "loadView_glee";
 
         public LiveDataBuilder(@LayoutRes int layoutId, @IdRes int brId, @Nullable DiffUtil.ItemCallback<T> itemCallback) {
             this.layoutId = layoutId;
@@ -231,7 +259,14 @@ public class AutoList<T> implements List<T> {
         }
 
         public LiveDataBuilder<T> mapFooter(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
-            getFootersDataSet().add(new Hf(key, layoutId, brId, data));
+            List<Hf> footersDataSet = getFootersDataSet();
+            Hf hf = new Hf(key, layoutId, brId, data);
+            int index = footersDataSet.size() - 1;
+            if (index > -1 && Objects.equals(footersDataSet.get(index).getKey(), LOAD_VIEW_KTY)) {
+                footersDataSet.add(index, hf);
+            } else {
+                footersDataSet.add(hf);
+            }
             return this;
         }
 
@@ -247,6 +282,10 @@ public class AutoList<T> implements List<T> {
 
         public LiveDataBuilder<T> mapHeader(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId) {
             return mapHeader(key, layoutId, brId, null);
+        }
+
+        public LiveDataBuilder<T> loadMore(@LayoutRes int layoutId, @IdRes int brId) {
+            return mapFooter(LOAD_VIEW_KTY, layoutId, brId, null);
         }
 
         public AutoListLiveData<T> build() {
@@ -406,7 +445,11 @@ public class AutoList<T> implements List<T> {
         return config;
     }
 
-    static class Hf{
+    public interface OnLoadListener {
+        void onLoad();
+    }
+
+    static class Hf {
         @IdRes
         private int brId;
 

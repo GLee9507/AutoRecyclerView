@@ -20,6 +20,7 @@ import java.util.List;
 public class BViewModel extends ViewModel {
     private AutoList.LiveDataBuilder.AutoListLiveData<TestBean> listLiveData = new AutoList.LiveDataBuilder<TestBean>(R.layout.item_test, BR.bean, null)
             .mapHeader("header1", R.layout.header_test, BR.headerText)
+            .loadMore(R.layout.item_load, -1)
 //            .mapFooter(R.layout.footer_test, BR.text)
             .build();
 
@@ -45,9 +46,9 @@ public class BViewModel extends ViewModel {
                     }
                     i++;
                     AutoList<TestBean> value1 = listLiveData.getValue();
-//                    value1.addFooter("header1", R.layout.header_test, BR.headerText, "" + i);
-                    value1.updateHeader("header1", i + "");
-                    value1.add(new TestBean("aa"));
+//                    value1.addFooter("FOOT", R.layout.header_test, BR.headerText, "" + i);
+//                    value1.updateHeader("header1", i + "");
+//                    value1.add(new TestBean("aa"));
                     listLiveData.postValue(value1);
                 }
             }
