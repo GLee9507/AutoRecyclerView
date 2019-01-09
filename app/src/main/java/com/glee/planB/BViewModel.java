@@ -11,6 +11,7 @@ import com.glee.autorecyclerview.R;
 import com.glee.autorecyclerview.BR;
 import com.glee.autorecyclerview.TestBean;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,8 +40,9 @@ public class BViewModel extends AndroidViewModel {
                                 e.printStackTrace();
                             }
                             AutoList<TestBean> value = listLiveData.getValue();
+                            int size = value.size();
                             for (int i = 0; i < 5; i++) {
-                                value.add(new TestBean("aaa"));
+                                value.add(new TestBean((size + i) + ""));
                             }
                             value.loadComplete();
                             listLiveData.postValue(value);
@@ -78,7 +80,10 @@ public class BViewModel extends AndroidViewModel {
                         e.printStackTrace();
                     }
                     AutoList<TestBean> value1 = listLiveData.getValue();
-                    value1.get(i).setHighlight(true);
+                    if (i >= 1) {
+                        value1.update(i - 1).setHighlight(false);
+                    }
+                    value1.update(i).setHighlight(true);
                     listLiveData.postValue(value1);
                 }
 

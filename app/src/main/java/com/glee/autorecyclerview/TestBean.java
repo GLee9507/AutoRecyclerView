@@ -10,7 +10,7 @@ import android.support.v7.util.DiffUtil;
  */
 
 
-public class TestBean {
+public class TestBean  {
     private String text;
     private boolean highlight;
 
@@ -56,5 +56,6 @@ public class TestBean {
             return testBean.text.equals(t1.text) && testBean.isHighlight() == t1.isHighlight();
         }
     };
+
 
 }

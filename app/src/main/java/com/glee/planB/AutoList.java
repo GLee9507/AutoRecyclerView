@@ -8,8 +8,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.recyclerview.extensions.AsyncDifferConfig;
 import android.support.v7.util.DiffUtil;
+import android.util.Log;
 import android.view.View;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -347,6 +350,36 @@ public class AutoList<T> implements List<T> {
         }
     }
 
+    private Method internalClone;
+
+    @SuppressWarnings("unchecked")
+    public T update(int index) {
+        T t = get(index);
+        if (internalClone == null) {
+            Class clazz;
+            do {
+                clazz = t.getClass().getSuperclass();
+            } while (clazz != Object.class);
+            try {
+                internalClone = clazz.getDeclaredMethod("internalClone");
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            internalClone.setAccessible(true);
+            T invoke = (T) internalClone.invoke(t);
+            set(index, invoke);
+            return invoke;
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } finally {
+            internalClone.setAccessible(false);
+        }
+        return null;
+    }
 
     @Override
     public int size() {
