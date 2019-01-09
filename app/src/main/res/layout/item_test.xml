@@ -2,14 +2,17 @@
 <layout>
 
     <data>
+
         <variable
             name="bean"
             type="com.glee.autorecyclerview.TestBean" />
+
     </data>
 
     <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@{bean.highlight?@color/colorAccent:@color/colorPrimaryDark}"
         android:orientation="vertical">
 
         <TextView

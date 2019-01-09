@@ -1,12 +1,14 @@
 package com.glee.planB;
 
 import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.ViewModel;
 import android.support.annotation.IdRes;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.recyclerview.extensions.AsyncDifferConfig;
 import android.support.v7.util.DiffUtil;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,6 +26,7 @@ import java.util.Objects;
 
 public class AutoList<T> implements List<T> {
     private OnLoadListener onLoadListener;
+    private OnItemClickListener onItemClickListener;
     private List<T> itemData = new ArrayList<>();
     private List<Hf> headerList, footerList;
     @LayoutRes
@@ -34,16 +37,20 @@ public class AutoList<T> implements List<T> {
     private boolean shouldRefreshHeader, shouldRefreshFooter;
     private AsyncDifferConfig<T> config;
     private int currentState = AutoAdapter.STATE_NORMAL;
+    private ViewModel viewModel;
 
     private AutoList(
+            @NonNull ViewModel viewModel,
             int brId,
             int layoutId,
             List<Hf> headerDataSet,
             List<Hf> footersDataSet,
             AsyncDifferConfig<T> config,
-            OnLoadListener onLoadListener
-    ) {
+            OnLoadListener onLoadListener,
+            OnItemClickListener onItemClickListener) {
+        this.viewModel = viewModel;
         this.onLoadListener = onLoadListener;
+        this.onItemClickListener = onItemClickListener;
         this.config = config;
         this.brId = brId;
         this.layoutId = layoutId;
@@ -223,6 +230,10 @@ public class AutoList<T> implements List<T> {
         return currentState;
     }
 
+    public OnItemClickListener getOnItemClickListener() {
+        return onItemClickListener;
+    }
+
     public static class LiveDataBuilder<T> {
         @IdRes
         private int brId;
@@ -231,10 +242,12 @@ public class AutoList<T> implements List<T> {
         private AsyncDifferConfig<T> config;
         private List<Hf> headerDataSet, footersDataSet;
         private final DiffUtil.ItemCallback<T> itemCallback;
-        public static final String LOAD_VIEW_KTY = "loadView_glee";
+        static final String LOAD_VIEW_KTY = "loadView_glee";
         private OnLoadListener onLoadListener;
+        private ViewModel viewModel;
+        private OnItemClickListener onItemClickListener;
 
-        public LiveDataBuilder(@LayoutRes int layoutId, @IdRes int brId, @Nullable DiffUtil.ItemCallback<T> itemCallback) {
+        public LiveDataBuilder(@NonNull ViewModel viewModel, @LayoutRes int layoutId, @IdRes int brId, @Nullable DiffUtil.ItemCallback<T> itemCallback) {
             this.layoutId = layoutId;
             this.brId = brId;
             if (itemCallback == null) {
@@ -250,11 +263,12 @@ public class AutoList<T> implements List<T> {
                     }
                 };
             }
+            this.viewModel = viewModel;
             this.itemCallback = itemCallback;
         }
 
-        public LiveDataBuilder(@LayoutRes int layoutId, @IdRes int brId) {
-            this(layoutId, brId, null);
+        public LiveDataBuilder(@NonNull ViewModel viewModel, @LayoutRes int layoutId, @IdRes int brId) {
+            this(viewModel, layoutId, brId, null);
         }
 
         public LiveDataBuilder<T> mapFooter(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId, @Nullable Object data) {
@@ -296,11 +310,16 @@ public class AutoList<T> implements List<T> {
             return mapFooter(LOAD_VIEW_KTY, layoutId, brId, data);
         }
 
+        public LiveDataBuilder<T> onItemClick(OnItemClickListener onItemClickListener) {
+            this.onItemClickListener = onItemClickListener;
+            return this;
+        }
+
         public AutoListLiveData<T> build() {
             AutoListLiveData<T> liveData = new AutoListLiveData<>();
             assert itemCallback != null;
             config = new AsyncDifferConfig.Builder<>(itemCallback).build();
-            liveData.setValue(new AutoList<>(brId, layoutId, headerDataSet, footersDataSet, config, onLoadListener));
+            liveData.setValue(new AutoList<>(viewModel, brId, layoutId, headerDataSet, footersDataSet, config, onLoadListener, onItemClickListener));
             return liveData;
         }
 
@@ -455,6 +474,10 @@ public class AutoList<T> implements List<T> {
 
     public interface OnLoadListener {
         void onLoad();
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(int pos);
     }
 
     static class Hf {

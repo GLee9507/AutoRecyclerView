@@ -12,6 +12,7 @@ import android.support.v7.util.DiffUtil;
 
 public class TestBean {
     private String text;
+    private boolean highlight;
 
     public String getText() {
         return text;
@@ -19,6 +20,22 @@ public class TestBean {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public boolean isHighlight() {
+        return highlight;
+    }
+
+    public void setHighlight(boolean highlight) {
+        this.highlight = highlight;
+    }
+
+    public static DiffUtil.ItemCallback<TestBean> getItemCallback() {
+        return itemCallback;
+    }
+
+    public static void setItemCallback(DiffUtil.ItemCallback<TestBean> itemCallback) {
+        TestBean.itemCallback = itemCallback;
     }
 
     public TestBean(String text) {
@@ -36,7 +53,7 @@ public class TestBean {
 
         @Override
         public boolean areContentsTheSame(@NonNull TestBean testBean, @NonNull TestBean t1) {
-            return testBean.text.equals(t1.text);
+            return testBean.text.equals(t1.text) && testBean.isHighlight() == t1.isHighlight();
         }
     };
 
