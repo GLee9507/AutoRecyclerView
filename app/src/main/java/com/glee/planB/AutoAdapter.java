@@ -25,12 +25,12 @@ import java.util.List;
 
 public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BindingViewHolder> {
     private LastRunAsyncListDiffer<T> differ;
-    private static final int STATE_NORMAL = 1;
-    private static final int STATE_LOADING = 2;
-    private static final int STATE_END = 3;
+    static final int STATE_NORMAL = 1;
+    static final int STATE_LOADING = 2;
+    static final int STATE_END = 3;
+    private int currentState = STATE_NORMAL;
     private final Context context;
     private final LayoutInflater inflater;
-    private int currentState = STATE_NORMAL;
     private AutoList<T> autoList;
     private List<AutoList.Hf> headers;
     private List<AutoList.Hf> footers;
@@ -109,6 +109,10 @@ public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BindingView
             return;
         }
         currentState = STATE_LOADING;
+        AutoList.OnLoadListener onLoadListener = autoList.getOnLoadListener();
+        if (onLoadListener != null) {
+            onLoadListener.onLoad();
+        }
     }
 
 
@@ -218,7 +222,7 @@ public class AutoAdapter<T> extends RecyclerView.Adapter<AutoAdapter.BindingView
                 }
             };
         }
-
+        currentState = autoList.getCurrentState();
         differ.submitList(autoList, runnable);
     }
 

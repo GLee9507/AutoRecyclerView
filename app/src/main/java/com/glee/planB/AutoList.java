@@ -23,6 +23,7 @@ import java.util.Objects;
 
 
 public class AutoList<T> implements List<T> {
+    private OnLoadListener onLoadListener;
     private List<T> itemData = new ArrayList<>();
     private List<Hf> headerList, footerList;
     @LayoutRes
@@ -32,14 +33,17 @@ public class AutoList<T> implements List<T> {
     private int brId;
     private boolean shouldRefreshHeader, shouldRefreshFooter;
     private AsyncDifferConfig<T> config;
+    private int currentState = AutoAdapter.STATE_NORMAL;
 
     private AutoList(
             int brId,
             int layoutId,
             List<Hf> headerDataSet,
             List<Hf> footersDataSet,
-            AsyncDifferConfig<T> config
+            AsyncDifferConfig<T> config,
+            OnLoadListener onLoadListener
     ) {
+        this.onLoadListener = onLoadListener;
         this.config = config;
         this.brId = brId;
         this.layoutId = layoutId;
@@ -62,24 +66,6 @@ public class AutoList<T> implements List<T> {
     public List<Hf> getFooterList() {
         return footerList;
     }
-
-//    private List<String> needHeaderRefreshKeys;
-//
-//    List<String> getNeedHeaderRefreshKeys() {
-//        if (needHeaderRefreshKeys == null) {
-//            needHeaderRefreshKeys = new ArrayList<>();
-//        }
-//        return needHeaderRefreshKeys;
-//    }
-//
-//    private List<String> needFooterRefreshKeys;
-//
-//    List<String> getNeedFooterRefreshKeys() {
-//        if (needFooterRefreshKeys == null) {
-//            needFooterRefreshKeys = new ArrayList<>();
-//        }
-//        return needFooterRefreshKeys;
-//    }
 
     public void addHeader(@NonNull String key, @LayoutRes int layoutId, @IdRes int brId) {
         addHeader(key, layoutId, brId, null);
@@ -217,12 +203,24 @@ public class AutoList<T> implements List<T> {
         return layoutId;
     }
 
+    public OnLoadListener getOnLoadListener() {
+        return onLoadListener;
+    }
+
     public boolean isEnableLoad() {
         return enableLoad;
     }
 
     public int getLoadLayoutId() {
         return loadLayoutId;
+    }
+
+    public void loadComplete() {
+        currentState = AutoAdapter.STATE_NORMAL;
+    }
+
+    public int getCurrentState() {
+        return currentState;
     }
 
     public static class LiveDataBuilder<T> {
@@ -234,6 +232,7 @@ public class AutoList<T> implements List<T> {
         private List<Hf> headerDataSet, footersDataSet;
         private final DiffUtil.ItemCallback<T> itemCallback;
         public static final String LOAD_VIEW_KTY = "loadView_glee";
+        private OnLoadListener onLoadListener;
 
         public LiveDataBuilder(@LayoutRes int layoutId, @IdRes int brId, @Nullable DiffUtil.ItemCallback<T> itemCallback) {
             this.layoutId = layoutId;
@@ -284,15 +283,24 @@ public class AutoList<T> implements List<T> {
             return mapHeader(key, layoutId, brId, null);
         }
 
-        public LiveDataBuilder<T> loadMore(@LayoutRes int layoutId, @IdRes int brId) {
-            return mapFooter(LOAD_VIEW_KTY, layoutId, brId, null);
+        public LiveDataBuilder<T> loadMore(@LayoutRes int layoutId, @IdRes int brId, OnLoadListener onLoadListener) {
+            return loadMore(layoutId, brId, null, onLoadListener);
+        }
+
+        public LiveDataBuilder<T> loadMore(@LayoutRes int layoutId, OnLoadListener onLoadListener) {
+            return loadMore(layoutId, -1, null, onLoadListener);
+        }
+
+        public LiveDataBuilder<T> loadMore(@LayoutRes int layoutId, @IdRes int brId, Object data, OnLoadListener onLoadListener) {
+            this.onLoadListener = onLoadListener;
+            return mapFooter(LOAD_VIEW_KTY, layoutId, brId, data);
         }
 
         public AutoListLiveData<T> build() {
             AutoListLiveData<T> liveData = new AutoListLiveData<>();
             assert itemCallback != null;
             config = new AsyncDifferConfig.Builder<>(itemCallback).build();
-            liveData.setValue(new AutoList<>(brId, layoutId, headerDataSet, footersDataSet, config));
+            liveData.setValue(new AutoList<>(brId, layoutId, headerDataSet, footersDataSet, config, onLoadListener));
             return liveData;
         }
 
@@ -458,7 +466,6 @@ public class AutoList<T> implements List<T> {
 
         private Object data;
         private String key;
-        private boolean needRefresh;
 
         Hf(String key, int layoutId, int brId) {
             this(key, layoutId, brId, null);
@@ -485,24 +492,10 @@ public class AutoList<T> implements List<T> {
 
         public void setData(Object data) {
             this.data = data;
-            needRefresh = true;
         }
 
         public String getKey() {
             return key;
-        }
-
-        public boolean isSame(Hf hf) {
-            return Objects.equals(key, hf.getKey()) && brId == hf.getBrId() && layoutId == hf.getLayoutId() &&
-                    Objects.equals(data, hf.getData());
-        }
-
-        public boolean isNeedRefresh() {
-            return needRefresh;
-        }
-
-        public void refreshFinish() {
-            needRefresh = false;
         }
     }
 }

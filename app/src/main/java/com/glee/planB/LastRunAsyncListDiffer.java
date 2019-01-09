@@ -11,6 +11,7 @@ import android.support.v7.util.DiffUtil;
 import android.support.v7.util.ListUpdateCallback;
 import android.support.v7.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -68,7 +69,7 @@ public class LastRunAsyncListDiffer<T> {
                     doLastRunnable.run();
                 }
             } else if (this.mList == null) {
-                this.mList = newList;
+                this.mList = new ArrayList<>(newList);
                 this.mReadOnlyList = Collections.unmodifiableList(newList);
                 this.mUpdateCallback.onInserted(0, newList.size());
                 if (doLastRunnable != null) {
@@ -147,7 +148,7 @@ public class LastRunAsyncListDiffer<T> {
     }
 
     void latchList(@NonNull List<T> newList, @NonNull DiffUtil.DiffResult diffResult) {
-        this.mList = newList;
+        this.mList = new ArrayList<>(newList);
         this.mReadOnlyList = Collections.unmodifiableList(newList);
         diffResult.dispatchUpdatesTo(this.mUpdateCallback);
     }

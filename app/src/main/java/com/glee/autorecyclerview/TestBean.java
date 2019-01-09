@@ -10,7 +10,7 @@ import android.support.v7.util.DiffUtil;
  */
 
 
-public class TestBean implements Differentiable<TestBean> {
+public class TestBean {
     private String text;
 
     public String getText() {
@@ -26,18 +26,18 @@ public class TestBean implements Differentiable<TestBean> {
         this.text = text;
     }
 
-    @Override
-    public DiffUtil.ItemCallback<TestBean> getItemCallback() {
-        return new DiffUtil.ItemCallback<TestBean>() {
-            @Override
-            public boolean areItemsTheSame(@NonNull TestBean testBean, @NonNull TestBean t1) {
-                return testBean.equals(t1);
-            }
+    public static DiffUtil.ItemCallback<TestBean> itemCallback = new DiffUtil.ItemCallback<TestBean>()
 
-            @Override
-            public boolean areContentsTheSame(@NonNull TestBean testBean, @NonNull TestBean t1) {
-                return testBean.text.equals(t1.text);
-            }
-        };
-    }
+    {
+        @Override
+        public boolean areItemsTheSame(@NonNull TestBean testBean, @NonNull TestBean t1) {
+            return testBean.equals(t1);
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull TestBean testBean, @NonNull TestBean t1) {
+            return testBean.text.equals(t1.text);
+        }
+    };
+
 }
